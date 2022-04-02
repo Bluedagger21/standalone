@@ -2,14 +2,14 @@
 import os
 import sys
 import re
+import argparse
 
-# Check for arguments. 1 is the command itself.
-if len(sys.argv) == 1:
-    print("ERROR: Please specify a bcsim2 log as an argument")
-    quit()
+parser = argparse.ArgumentParser()
+parser.add_argument('logfile', help="bcsim2 log file to parse commands from")
+args = parser.parse_args()
 
-# Open a file handle for the first argument, this case the expected log file
-logFileHandle = open(sys.argv[1])
+# Open a file handle from the logfile argument
+logFileHandle = open(args.logfile)
 logFileContents = logFileHandle.read()
 
 # Initialize constants
