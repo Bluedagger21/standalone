@@ -32,10 +32,12 @@ if voptArgsMatched:
     VOPT_ARG = voptArgsMatched.group(1) + voptArgsMatched.group(3)
     VOPT_ARG_FILENAME = "vopt_args_"+TEST_NAME+".f"
 
+    # Create the vopt_arg_<testname>.f and write the args to it
     voptArgsFH = open(VOPT_ARG_FILENAME, "w")
     voptArgsFH.write(VOPT_ARG)
     voptArgsFH.close()
 
+    # Create the run_vopt_<testname> executable, including the .f file and -modelsim arg
     runVopt = open("run_vopt_"+TEST_NAME, "w")
     runVopt.write("vopt -f "+VOPT_ARG_FILENAME+" "+MODELSIM_ARG)
     runVopt.close()
@@ -46,10 +48,12 @@ if vsimArgsMatched:
     VSIM_ARG = vsimArgsMatched.group(1) + vsimArgsMatched.group(3)
     VSIM_ARG_FILENAME = "vsim_args_"+TEST_NAME+".f"
 
+    # Create the vsim_arg_<testname>.f and write the args to it
     vsimArgsFH = open(VSIM_ARG_FILENAME, "w")
     vsimArgsFH.write(VSIM_ARG)
     vsimArgsFH.close()
 
+    # Create the run_vsim_<testname> executable, including the .f file and -modelsim arg
     runVopt = open("run_vsim_"+TEST_NAME, "w")
     runVopt.write("vsim -f "+VSIM_ARG_FILENAME+" "+MODELSIM_ARG)
     runVopt.close()
