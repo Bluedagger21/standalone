@@ -3,7 +3,7 @@ import os
 import sys
 import re
 
-if sys.argv.count == 1:
+if len(sys.argv) == 1:
     print("ERROR: Please specify a bcsim2 log as an argument")
     quit()
 
