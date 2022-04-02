@@ -1,5 +1,6 @@
-test.log
-vopt_args_test.f
+*.log
+vopt_args*.f
 .vscode/launch.json
-run_vopt_test
-run_vsim_test
+run_vopt_*
+run_vsim_*
+vsim_args_*
