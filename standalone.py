@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from os.path import exists
 import os
 import sys
 import re
