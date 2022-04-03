@@ -2,19 +2,25 @@
 import os
 import sys
 import re
+import argparse
 
-# Check for arguments. 1 is the command itself.
-if len(sys.argv) == 1:
-    print("ERROR: Please specify a bcsim2 log as an argument")
-    quit()
+parser = argparse.ArgumentParser()
+parser.add_argument('logfile', help="bcsim2 log file to parse commands from")
+parser.add_argument("--testname", help="user defined name for the test")
+parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+args = parser.parse_args()
 
-# Open a file handle for the first argument, this case the expected log file
-logFileHandle = open(sys.argv[1])
+# Open a file handle from the logfile argument
+logFileHandle = open(args.logfile)
 logFileContents = logFileHandle.read()
 
 # Initialize constants
 LOGFILE_NAME = logFileHandle.name
-TEST_NAME = re.search(r'^([^.]+)', LOGFILE_NAME, flags=re.MULTILINE).group(1) # use characters before first '.' as test name
+if args.testname:
+    TEST_NAME = args.testname
+else:
+    # Use characters before first '.' in logfile as test name
+    TEST_NAME = re.search(r'^([^.]+)', LOGFILE_NAME, flags=re.MULTILINE).group(1) 
 MODELSIM_ARG = ""
 VOPT_ARG = ""
 VSIM_ARG = ""
