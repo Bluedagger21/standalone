@@ -5,7 +5,7 @@ import re
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('logfile', help="bcsim2 log file to parse commands from")
+parser.add_argument('logfile', help="log file to parse vopt/vsim commands from")
 parser.add_argument("--testname", help="user defined name for the test")
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 args = parser.parse_args()
@@ -28,8 +28,8 @@ VOPT_ARG_FILENAME = ""
 VSIM_ARG_FILENAME = ""
 
 # Search for vopt command while pulling out -modelsimini switch
-voptArgsMatched = re.search(r'^/tools/bin/vopt (.*).+(.*-modelsimini.*.ini)(.*)', logFileContents, flags=re.MULTILINE)
-vsimArgsMatched = re.search(r'^/tools/bin/vsim (.*).+(.*-modelsimini.*.ini)(.*)', logFileContents, flags=re.MULTILINE)
+voptArgsMatched = re.search(r'vopt (.*).+(.*-modelsimini.*.ini)(.*)', logFileContents, flags=re.MULTILINE)
+vsimArgsMatched = re.search(r'vsim (.*).+(.*-modelsimini.*.ini)(.*)', logFileContents, flags=re.MULTILINE)
 
 logFileHandle.close()
 
