@@ -36,8 +36,12 @@ VOPT_ARG_FILENAME = ""
 VSIM_ARG_FILENAME = ""
 
 # Search for vopt command while pulling out -modelsimini switch
+if args.verbose: print("Parsing for vopt...", end="")
 voptArgsMatched = re.search(r'vopt (.*).+(.*-modelsimini.*.ini)(.*)', logFileContents, flags=re.MULTILINE)
+if args.verbose: print("Done!")
+if args.verbose: print("Parsing for vsim...", end="")
 vsimArgsMatched = re.search(r'vsim (.*).+(.*-modelsimini.*.ini)(.*)', logFileContents, flags=re.MULTILINE)
+if args.verbose: print("Done!")
 
 logFileHandle.close()
 
@@ -56,11 +60,13 @@ if voptArgsMatched:
     VOPT_ARG_FILENAME = "vopt_args_"+TEST_NAME+".f"
 
     # Create the vopt_arg_<testname>.f and write the args to it
+    if args.verbose: print("Writing vopt args to "+VOPT_ARG_FILENAME)
     voptArgsFH = open(os.path.join(ABS_OUT_DIR,VOPT_ARG_FILENAME), "w")
     voptArgsFH.write(VOPT_ARG)
     voptArgsFH.close()
 
     # Create the run_vopt_<testname> executable, including the .f file and -modelsim arg
+    if args.verbose: print("Writing vopt command to run_vopt_"+VOPT_ARG_FILENAME)
     runVopt = open(os.path.join(ABS_OUT_DIR,"run_vopt_"+TEST_NAME), "w")
     runVopt.write("vopt -f "+VOPT_ARG_FILENAME+" "+MODELSIM_ARG)
     runVopt.close()
@@ -72,11 +78,13 @@ if vsimArgsMatched:
     VSIM_ARG_FILENAME = "vsim_args_"+TEST_NAME+".f"
 
     # Create the vsim_arg_<testname>.f and write the args to it
+    if args.verbose: print("Writing vsim args to "+VSIM_ARG_FILENAME)
     vsimArgsFH = open(os.path.join(ABS_OUT_DIR,VSIM_ARG_FILENAME), "w")
     vsimArgsFH.write(VSIM_ARG)
     vsimArgsFH.close()
 
     # Create the run_vsim_<testname> executable, including the .f file and -modelsim arg
+    if args.verbose: print("Writing vsim command to run_vsim_"+VSIM_ARG_FILENAME)
     runVopt = open(os.path.join(ABS_OUT_DIR, "run_vsim_"+TEST_NAME), "w")
     runVopt.write("vsim -f "+VSIM_ARG_FILENAME+" "+MODELSIM_ARG)
     runVopt.close()
