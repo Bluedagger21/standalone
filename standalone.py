@@ -6,6 +6,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="bcsim2 log file to parse commands from")
+parser.add_argument("--testname", help="user defined name for the test")
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 args = parser.parse_args()
 
@@ -15,7 +16,11 @@ logFileContents = logFileHandle.read()
 
 # Initialize constants
 LOGFILE_NAME = logFileHandle.name
-TEST_NAME = re.search(r'^([^.]+)', LOGFILE_NAME, flags=re.MULTILINE).group(1) # use characters before first '.' as test name
+if args.testname:
+    TEST_NAME = args.testname
+else:
+    # Use characters before first '.' in logfile as test name
+    TEST_NAME = re.search(r'^([^.]+)', LOGFILE_NAME, flags=re.MULTILINE).group(1) 
 MODELSIM_ARG = ""
 VOPT_ARG = ""
 VSIM_ARG = ""
