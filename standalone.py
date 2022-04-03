@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="bcsim2 log file to parse commands from")
 parser.add_argument("--testname", help="user defined name for the test")
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+parser.add_argument("--outdir", help="relative path directory for generated files")
 args = parser.parse_args()
 
 # Open a file handle from the logfile argument
@@ -21,6 +22,13 @@ if args.testname:
 else:
     # Use characters before first '.' in logfile as test name
     TEST_NAME = re.search(r'^([^.]+)', LOGFILE_NAME, flags=re.MULTILINE).group(1) 
+
+SCRIPT_DIRECTORY = os.path.dirname(__file__)
+REL_OUT_DIR = args.outdir
+if REL_OUT_DIR: 
+    ABS_OUT_DIR = os.path.join(SCRIPT_DIRECTORY, REL_OUT_DIR)
+else:
+    ABS_OUT_DIR = SCRIPT_DIRECTORY
 MODELSIM_ARG = ""
 VOPT_ARG = ""
 VSIM_ARG = ""
@@ -33,18 +41,27 @@ vsimArgsMatched = re.search(r'^/tools/bin/vsim (.*).+(.*-modelsimini.*.ini)(.*)'
 
 logFileHandle.close()
 
+# Make target directory if --outdir given
+if REL_OUT_DIR:
+    try:
+        os.mkdir(ABS_OUT_DIR)
+        if args.verbose: print("Directory "+ABS_OUT_DIR+" created")
+    except FileExistsError:
+        print("ERROR: Directory "+ABS_OUT_DIR+" already exists")
+        quit()
+
 if voptArgsMatched:
     MODELSIM_ARG = voptArgsMatched.group(2)
     VOPT_ARG = voptArgsMatched.group(1) + voptArgsMatched.group(3)
     VOPT_ARG_FILENAME = "vopt_args_"+TEST_NAME+".f"
 
     # Create the vopt_arg_<testname>.f and write the args to it
-    voptArgsFH = open(VOPT_ARG_FILENAME, "w")
+    voptArgsFH = open(os.path.join(ABS_OUT_DIR,VOPT_ARG_FILENAME), "w")
     voptArgsFH.write(VOPT_ARG)
     voptArgsFH.close()
 
     # Create the run_vopt_<testname> executable, including the .f file and -modelsim arg
-    runVopt = open("run_vopt_"+TEST_NAME, "w")
+    runVopt = open(os.path.join(ABS_OUT_DIR,"run_vopt_"+TEST_NAME), "w")
     runVopt.write("vopt -f "+VOPT_ARG_FILENAME+" "+MODELSIM_ARG)
     runVopt.close()
 else:
@@ -55,12 +72,12 @@ if vsimArgsMatched:
     VSIM_ARG_FILENAME = "vsim_args_"+TEST_NAME+".f"
 
     # Create the vsim_arg_<testname>.f and write the args to it
-    vsimArgsFH = open(VSIM_ARG_FILENAME, "w")
+    vsimArgsFH = open(os.path.join(ABS_OUT_DIR,VSIM_ARG_FILENAME), "w")
     vsimArgsFH.write(VSIM_ARG)
     vsimArgsFH.close()
 
     # Create the run_vsim_<testname> executable, including the .f file and -modelsim arg
-    runVopt = open("run_vsim_"+TEST_NAME, "w")
+    runVopt = open(os.path.join(ABS_OUT_DIR, "run_vsim_"+TEST_NAME), "w")
     runVopt.write("vsim -f "+VSIM_ARG_FILENAME+" "+MODELSIM_ARG)
     runVopt.close()
 else:
