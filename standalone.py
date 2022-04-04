@@ -67,7 +67,7 @@ if voptArgsMatched:
     voptArgsFH.close()
 
     # Create the run_vopt_<testname> executable, including the .f file and -modelsim arg
-    if args.verbose: print("Writing vopt command to "+VOPT_ARG_FILENAME)
+    if args.verbose: print("Writing vopt command to run_vopt_"+TEST_NAME)
     runVopt = open(os.path.join(ABS_OUT_DIR,"run_vopt_"+TEST_NAME), "w")
     runVopt.write("vopt -f "+VOPT_ARG_FILENAME+" "+MODELSIM_ARG)
     runVopt.close()
@@ -85,7 +85,7 @@ if vsimArgsMatched:
     vsimArgsFH.close()
 
     # Create the run_vsim_<testname> executable, including the .f file and -modelsim arg
-    if args.verbose: print("Writing vsim command to "+VSIM_ARG_FILENAME)
+    if args.verbose: print("Writing vsim command to run_vsim"+TEST_NAME)
     runVopt = open(os.path.join(ABS_OUT_DIR, "run_vsim_"+TEST_NAME), "w")
     runVopt.write("vsim -f "+VSIM_ARG_FILENAME+" "+MODELSIM_ARG)
     runVopt.close()
