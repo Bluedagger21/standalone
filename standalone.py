@@ -16,7 +16,7 @@ logFileHandle = open(args.logfile)
 logFileContents = logFileHandle.read()
 
 # Initialize constants
-LOGFILE_NAME = logFileHandle.name
+LOGFILE_NAME = os.path.basename(logFileHandle.name)
 if args.testname:
     TEST_NAME = args.testname
 else:
