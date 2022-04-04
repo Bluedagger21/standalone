@@ -24,11 +24,12 @@ else:
     TEST_NAME = re.search(r'^([^.]+)', LOGFILE_NAME, flags=re.MULTILINE).group(1) 
 
 SCRIPT_DIRECTORY = os.path.dirname(__file__)
+CWD = os.getcwd()
 REL_OUT_DIR = args.outdir
 if REL_OUT_DIR: 
-    ABS_OUT_DIR = os.path.join(SCRIPT_DIRECTORY, REL_OUT_DIR)
+    ABS_OUT_DIR = os.path.join(CWD, REL_OUT_DIR)
 else:
-    ABS_OUT_DIR = SCRIPT_DIRECTORY
+    ABS_OUT_DIR = CWD
 MODELSIM_ARG = ""
 VOPT_ARG = ""
 VSIM_ARG = ""
