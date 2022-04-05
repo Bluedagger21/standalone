@@ -50,10 +50,10 @@ logFileHandle.close()
 if REL_OUT_DIR:
     try:
         os.mkdir(ABS_OUT_DIR)
-        if args.verbose: print("Directory "+ABS_OUT_DIR+" created")
     except FileExistsError:
-        print("ERROR: Directory "+ABS_OUT_DIR+" already exists")
-        quit()
+        if input("INFO: Directory "+ABS_OUT_DIR+" already exists. Overwrite? (y/n): ") == 'y':
+            quit()
+    if args.verbose: print("Directory "+ABS_OUT_DIR+" created")
 
 if voptArgsMatched:
     MODELSIM_ARG = voptArgsMatched.group(2)
