@@ -3,22 +3,71 @@ import os
 import sys
 import re
 import argparse
+
+class CommandSet:
+    args = None
+    testName = None
+
+    def __init__(self, args, type):
+        self.args = args
+        self.type = type
+        self.cmdList = []
+
+        if self.type == "vlog":
+            self.pattern = re.compile(r'^vlog (\-.*)', re.MULTILINE)
+        if self.type == "vopt":
+            self.pattern = re.compile(r'^vopt (.*).+(.*-modelsimini.*.\.ini)(.*)', re.MULTILINE)
+        if self.type == "vsim":
+            self.pattern = re.compile(r'^# vsim (.*).+(.*-modelsimini.*.\.ini)(.*)', re.MULTILINE)
+
+        if args.verbose: print("INFO: Parsing for "+self.type+"...")
+        with open(args.logfile, "r") as f:
+            self.matchedList = self.pattern.findall(f.read())
+
+        for self.match in self.matchedList:
+            self.cmdList.append(Command(self.type, self.match))
+            if args.verbose: print("INFO: Match found for "+self.type+"!")
+        
+        if args.testname:
+            self.testName = args.testname
+        else:
+            with open(args.logfile, "r") as f:
+                self.testName = re.search(r'^([^.]+)', os.path.basename(f.name), flags=re.MULTILINE).group(1)
+
+    def writeToOutput(self, path):
+        for i, cmd in enumerate(self.cmdList):
+            # Create the <type>_arg_<testname>.f and write the args to it
+            if self.args.verbose: print("INFO: Writing "+self.type+"_args_"+self.testName+str(i)+".f")
+            cmd.writeArgFile(self.testName+str(i), path)
+
+            # Create the run_<type>_<testname> executable, including the .f file and -modelsim arg (if applicable)
+            if self.args.verbose: print("INFO: Writing "+self.type+" command to run_"+self.type+"_"+self.testName+str(i))
+            cmd.writeRunFile(self.testName+str(i), path)     
 class Command:
     def __init__(self, type, matched):
         self.type = type
         self.matched = matched
         
-        self.modelsimArg = self.matched.group(2)
-        self.otherArgs = (self.matched.group(1) + self.matched.group(3)).split()
+        if self.type == "vlog":
+            self.otherArgs = self.matched.split()
+        else:
+            self.modelsimArg = self.matched[1] 
+            self.otherArgs = (self.matched[0] + self.matched[2]).split()
 
     def getModelsimArg(self):
-        return self.modelsimArg
+        if self.type == "vlog":
+            return None
+        else:
+            return " ".join(self.modelsimArg)
 
     def getOtherArgs(self):
         return " ".join(self.otherArgs)
 
     def getArgs(self):
-        return self.modelsimArg + " ".join(self.otherArgs)
+        if self.type == "vlog":
+            return " ".join(self.otherArgs)
+        else:
+            return self.modelsimArg + " ".join(self.otherArgs)
 
     def writeArgFile(self, testName, path):
         self.argFileName = self.type+"_args_"+testName+".f"
@@ -31,12 +80,15 @@ class Command:
         self.runFileName = "run_"+self.type+"_"+testName
         self.runFilePath = os.path.join(path,self.runFileName)
         self.runFH = open(self.runFilePath, "w")
-        self.runFH.write(self.type+" -f "+self.argFileName+" "+self.modelsimArg)
+        if self.type == "vlog":
+            self.runFH.write(self.type+" -f "+self.argFileName)
+        else:
+            self.runFH.write(self.type+" -f "+self.argFileName+" "+ self.modelsimArg)
         self.runFH.close()
 
 
 def parseForPattern(pattern, content):
-    return pattern.search(content)
+    return pattern.findall(content)
     
 
 parser = argparse.ArgumentParser()
@@ -46,19 +98,9 @@ parser.add_argument("-v", "--verbose", help="increase output verbosity", action=
 parser.add_argument("--outdir", help="relative path directory for generated files")
 args = parser.parse_args()
 
-# Open a file handle from the logfile argument
-logFileHandle = open(args.logfile)
-logFileContents = logFileHandle.read()
-logFileHandle.close()
+
 
 # Initialize constants
-LOGFILE_NAME = os.path.basename(logFileHandle.name)
-if args.testname:
-    TEST_NAME = args.testname
-else:
-    # Use characters before first '.' in logfile as test name
-    TEST_NAME = re.search(r'^([^.]+)', LOGFILE_NAME, flags=re.MULTILINE).group(1) 
-
 SCRIPT_DIRECTORY = os.path.dirname(__file__)
 CWD = os.getcwd()
 REL_OUT_DIR = args.outdir
@@ -66,8 +108,6 @@ if REL_OUT_DIR:
     ABS_OUT_DIR = os.path.join(CWD, REL_OUT_DIR)
 else:
     ABS_OUT_DIR = CWD
-VOPT_ARG_FILENAME = ""
-VSIM_ARG_FILENAME = ""
 
 # Make target directory if --outdir given
 if REL_OUT_DIR:
@@ -77,47 +117,11 @@ if REL_OUT_DIR:
     except FileExistsError:
         if input("INFO: Directory "+ABS_OUT_DIR+" already exists. Overwrite? (y/n): ") == 'n':
             quit()
-    
 
-# Search for vopt command while pulling out -modelsimini switch
-if args.verbose: print("INFO: Parsing for vopt...")
-voptPattern = re.compile(r'vopt (.*).+(.*-modelsimini.*.\.ini)(.*)', re.MULTILINE)
-voptArgsMatched = parseForPattern(voptPattern, logFileContents)
-if voptArgsMatched:
-    voptCmd = Command("vopt", voptArgsMatched)
-    if args.verbose: print("INFO: Matches found for vopt!")
+cmdSetList = (CommandSet(args, "vlog"), CommandSet(args, "vopt"), CommandSet(args, "vsim"))
 
-    # Create the vopt_arg_<testname>.f and write the args to it
-    if args.verbose: print("INFO: Writing vopt_args_"+TEST_NAME+".f")
-    voptCmd.writeArgFile(TEST_NAME, ABS_OUT_DIR)
-
-    # Create the run_vopt_<testname> executable, including the .f file and -modelsim arg
-    if args.verbose: print("INFO: Writing vopt command to run_vopt_"+TEST_NAME)
-    voptCmd.writeRunFile(TEST_NAME, ABS_OUT_DIR)
-
-else:
-    print("WARNING: No matches for vopt!")
-
-# Search for vsim command while pulling out -modelsimini switch
-if args.verbose: print("INFO: Parsing for vsim...")
-vsimPattern = re.compile(r'vsim (.*).+(.*-modelsimini.*.\.ini)(.*)', re.MULTILINE)
-vsimArgsMatched = parseForPattern(vsimPattern, logFileContents)
-if vsimArgsMatched:
-    vsimCmd = Command("vsim", vsimArgsMatched)
-    if args.verbose: print("INFO: Matches found for vsim!")
-
-    # Create the vopt_arg_<testname>.f and write the args to it
-    if args.verbose: print("INFO: Writing vsim_args_"+TEST_NAME+".f")
-    vsimCmd.writeArgFile(TEST_NAME, ABS_OUT_DIR)
-
-    # Create the run_vopt_<testname> executable, including the .f file and -modelsim arg
-    if args.verbose: print("INFO: Writing vsim command to run_vsim_"+TEST_NAME)
-    vsimCmd.writeRunFile(TEST_NAME, ABS_OUT_DIR)
-else:
-    print("WARNING: No matches for vsim!")
-
-
-
+for set in cmdSetList:
+    set.writeToOutput(ABS_OUT_DIR)
 
 
 
