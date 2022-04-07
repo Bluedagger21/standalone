@@ -84,9 +84,6 @@ class CommandSet:
             # Create the run_<type>_<testname> executable, including the .f file and -modelsim arg (if applicable)
             if self.args.verbose: print("INFO: Writing "+self.type+" command to run_"+self.type+"_"+self.testName+self.testNameIndex)
             cmd.writeRunFile(self.testName+self.testNameIndex, path)     
-
-def parseForPattern(pattern, content):
-    return pattern.findall(content)
     
 parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="log file to parse vopt/vsim commands from")
