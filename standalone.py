@@ -3,14 +3,15 @@ import os
 import sys
 import re
 import argparse
-
 class CommandSet:
     args = None
     testName = None
+    logPath = None
 
     def __init__(self, args, type):
         self.args = args
         self.type = type
+        self.logPath = os.path.abspath(args.logfile)
         self.cmdList = []
 
         if self.type == "vlog":
@@ -21,7 +22,7 @@ class CommandSet:
             self.pattern = re.compile(r'^# vsim (.*).+(.*-modelsimini.*.\.ini)(.*)', re.MULTILINE)
 
         if args.verbose: print("INFO: Parsing for "+self.type+"...")
-        with open(args.logfile, "r") as f:
+        with open(self.logPath, "r") as f:
             self.matchedList = self.pattern.findall(f.read())
 
         for self.match in self.matchedList:
@@ -31,18 +32,21 @@ class CommandSet:
         if args.testname:
             self.testName = args.testname
         else:
-            with open(args.logfile, "r") as f:
+            with open(self.logPath, "r") as f:
                 self.testName = re.search(r'^([^.]+)', os.path.basename(f.name), flags=re.MULTILINE).group(1)
 
     def writeToOutput(self, path):
+        self.testNameIndex = ""
         for i, cmd in enumerate(self.cmdList):
+            if self.type == "vlog":
+                self.testNameIndex = str(i + 1)
             # Create the <type>_arg_<testname>.f and write the args to it
-            if self.args.verbose: print("INFO: Writing "+self.type+"_args_"+self.testName+str(i)+".f")
-            cmd.writeArgFile(self.testName+str(i), path)
+            if self.args.verbose: print("INFO: Writing "+self.type+"_args_"+self.testName+self.testNameIndex+".f")
+            cmd.writeArgFile(self.testName+self.testNameIndex, path)
 
             # Create the run_<type>_<testname> executable, including the .f file and -modelsim arg (if applicable)
-            if self.args.verbose: print("INFO: Writing "+self.type+" command to run_"+self.type+"_"+self.testName+str(i))
-            cmd.writeRunFile(self.testName+str(i), path)     
+            if self.args.verbose: print("INFO: Writing "+self.type+" command to run_"+self.type+"_"+self.testName+self.testNameIndex)
+            cmd.writeRunFile(self.testName+self.testNameIndex, path)     
 class Command:
     def __init__(self, type, matched):
         self.type = type
@@ -86,26 +90,25 @@ class Command:
             self.runFH.write(self.type+" -f "+self.argFileName+" "+ self.modelsimArg)
         self.runFH.close()
 
-
 def parseForPattern(pattern, content):
     return pattern.findall(content)
     
-
 parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="log file to parse vopt/vsim commands from")
 parser.add_argument("--testname", help="user defined name for the test")
-parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 parser.add_argument("--outdir", help="relative path directory for generated files")
+parser.add_argument("--novlog", help="don't parse vlog commands", action="store_true")
+parser.add_argument("--novopt", help="don't parse vopt commands", action="store_true")
+parser.add_argument("--novsim", help="don't parse vsim commands", action="store_true")
+parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 args = parser.parse_args()
-
-
 
 # Initialize constants
 SCRIPT_DIRECTORY = os.path.dirname(__file__)
 CWD = os.getcwd()
 REL_OUT_DIR = args.outdir
 if REL_OUT_DIR: 
-    ABS_OUT_DIR = os.path.join(CWD, REL_OUT_DIR)
+    ABS_OUT_DIR = os.path.abspath(REL_OUT_DIR)
 else:
     ABS_OUT_DIR = CWD
 
@@ -118,11 +121,15 @@ if REL_OUT_DIR:
         if input("INFO: Directory "+ABS_OUT_DIR+" already exists. Overwrite? (y/n): ") == 'n':
             quit()
 
-cmdSetList = (CommandSet(args, "vlog"), CommandSet(args, "vopt"), CommandSet(args, "vsim"))
+# List of CommandSet classes to process
+cmdSetList = []
+if not args.novlog:
+    cmdSetList.append(CommandSet(args, "vlog"))
+if not args.novopt:
+    cmdSetList.append(CommandSet(args, "vopt"))
+if not args.novsim:
+    cmdSetList.append(CommandSet(args, "vsim"))
 
+# Write each set of commands out to files
 for set in cmdSetList:
     set.writeToOutput(ABS_OUT_DIR)
-
-
-
-
