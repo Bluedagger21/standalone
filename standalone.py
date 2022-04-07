@@ -3,6 +3,37 @@ import os
 import sys
 import re
 import argparse
+
+class Command:
+    def __init__(self, type, matched):
+        self.type = type
+        self.matched = matched
+        
+        self.modelsimArg = re.search(r"-modelsimini .*\.ini", self.matched).group(0)
+        self.otherArgs = (re.sub(self.modelsimArg, "", self.matched)).split()
+
+    def getModelsimArg(self):
+        return self.modelsimArg
+
+    def getOtherArgs(self):
+        return " ".join(self.otherArgs)
+
+    def getArgs(self):
+        return self.modelsimArg + " ".join(self.otherArgs)
+
+    def writeArgFile(self, testName, path):
+        self.argFileName = self.type+"_args_"+testName+".f"
+        self.argFilePath = os.path.join(path,self.argFileName)
+        self.argsFH = open(self.argFilePath, "w")
+        self.argsFH.write(self.getOtherArgs())
+        self.argsFH.close()
+
+    def writeRunFile(self, testName, path):
+        self.runFileName = "run_"+self.type+"_"+testName
+        self.runFilePath = os.path.join(path,self.runFileName)
+        self.runFH = open(self.runFilePath, "w")
+        self.runFH.write(self.type+" -f "+self.argFileName+" "+ self.modelsimArg)
+        self.runFH.close()
 class CommandSet:
     args = None
     testName = None
@@ -14,12 +45,11 @@ class CommandSet:
         self.logPath = os.path.abspath(args.logfile)
         self.cmdList = []
 
-        if self.type == "vlog":
-            self.pattern = re.compile(r'^vlog (\-.*)', re.MULTILINE)
-        if self.type == "vopt":
-            self.pattern = re.compile(r'^vopt (.*).+(.*-modelsimini.*.\.ini)(.*)', re.MULTILINE)
+        # For some reason, vsim has a "# " before it to pattern match
         if self.type == "vsim":
-            self.pattern = re.compile(r'^# vsim (.*).+(.*-modelsimini.*.\.ini)(.*)', re.MULTILINE)
+            self.pattern = re.compile(r'^# vsim (-.*)', re.MULTILINE) 
+        else:
+            self.pattern = re.compile(r'^'+self.type+' (-.*)', re.MULTILINE)
 
         if args.verbose: print("INFO: Parsing for "+self.type+"...")
         with open(self.logPath, "r") as f:
@@ -47,48 +77,6 @@ class CommandSet:
             # Create the run_<type>_<testname> executable, including the .f file and -modelsim arg (if applicable)
             if self.args.verbose: print("INFO: Writing "+self.type+" command to run_"+self.type+"_"+self.testName+self.testNameIndex)
             cmd.writeRunFile(self.testName+self.testNameIndex, path)     
-class Command:
-    def __init__(self, type, matched):
-        self.type = type
-        self.matched = matched
-        
-        if self.type == "vlog":
-            self.otherArgs = self.matched.split()
-        else:
-            self.modelsimArg = self.matched[1] 
-            self.otherArgs = (self.matched[0] + self.matched[2]).split()
-
-    def getModelsimArg(self):
-        if self.type == "vlog":
-            return None
-        else:
-            return " ".join(self.modelsimArg)
-
-    def getOtherArgs(self):
-        return " ".join(self.otherArgs)
-
-    def getArgs(self):
-        if self.type == "vlog":
-            return " ".join(self.otherArgs)
-        else:
-            return self.modelsimArg + " ".join(self.otherArgs)
-
-    def writeArgFile(self, testName, path):
-        self.argFileName = self.type+"_args_"+testName+".f"
-        self.argFilePath = os.path.join(path,self.argFileName)
-        self.argsFH = open(self.argFilePath, "w")
-        self.argsFH.write(self.getOtherArgs())
-        self.argsFH.close()
-
-    def writeRunFile(self, testName, path):
-        self.runFileName = "run_"+self.type+"_"+testName
-        self.runFilePath = os.path.join(path,self.runFileName)
-        self.runFH = open(self.runFilePath, "w")
-        if self.type == "vlog":
-            self.runFH.write(self.type+" -f "+self.argFileName)
-        else:
-            self.runFH.write(self.type+" -f "+self.argFileName+" "+ self.modelsimArg)
-        self.runFH.close()
 
 def parseForPattern(pattern, content):
     return pattern.findall(content)
