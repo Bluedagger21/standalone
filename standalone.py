@@ -118,7 +118,7 @@ if REL_OUT_DIR:
         os.mkdir(ABS_OUT_DIR)
         if args.verbose: print("Directory "+ABS_OUT_DIR+" created")
     except FileExistsError:
-        if input("INFO: Directory "+ABS_OUT_DIR+" already exists. \nOverwrite? (y/n): ") == 'n':
+        if input("INFO: Directory "+ABS_OUT_DIR+" already exists. \nOverwrite contents? (y/n): ") == 'n':
             quit()
 
 # List of CommandSet classes to process
