@@ -12,15 +12,19 @@ class Command:
         self.modelsimArg = re.search(r"-modelsimini .*\.ini", self.matched).group(0)
         self.otherArgs = (re.sub(self.modelsimArg, "", self.matched)).split()
 
+    # Returns -modelsimini argument
     def getModelsimArg(self):
         return self.modelsimArg
 
+    # Returns joined arguments other than -modelsimini
     def getOtherArgs(self):
         return " ".join(self.otherArgs)
 
+    # Returns all arguments
     def getArgs(self):
         return self.modelsimArg + " ".join(self.otherArgs)
 
+    # Write .f file
     def writeArgFile(self, testName, path):
         self.argFileName = self.type+"_args_"+testName+".f"
         self.argFilePath = os.path.join(path,self.argFileName)
@@ -28,6 +32,7 @@ class Command:
         self.argsFH.write(self.getOtherArgs())
         self.argsFH.close()
 
+    # Write single line script with command utilizing .f file
     def writeRunFile(self, testName, path):
         self.runFileName = "run_"+self.type+"_"+testName
         self.runFilePath = os.path.join(path,self.runFileName)
@@ -45,17 +50,21 @@ class CommandSet:
         self.logPath = os.path.abspath(args.logfile)
         self.cmdList = []
 
-        # For some reason, vsim has a "# " before it to pattern match
+        # Tool allows 0 to 2 characters after beginning of new line to start parsing for cmd
         self.pattern = re.compile(r'^.{0,2}'+self.type+' (-.*)', re.MULTILINE)
 
+
         if args.verbose: print("INFO: Parsing for "+self.type+"...")
+        # Open logfile and return all matches of set pattern
         with open(self.logPath, "r") as f:
             self.matchedList = self.pattern.findall(f.read())
 
+        # For each match, append a new Command class
         for self.match in self.matchedList:
             self.cmdList.append(Command(self.type, self.match))
             if args.verbose: print("INFO: Match found for "+self.type+"!")
         
+        # Use user defined testname or derive from logfile name (default)
         if args.testname:
             self.testName = args.testname
         else:
@@ -64,6 +73,7 @@ class CommandSet:
 
     def writeToOutput(self, path):
         self.testNameIndex = ""
+        # Iterate through commands in command list
         for i, cmd in enumerate(self.cmdList):
             if self.type == "vlog":
                 self.testNameIndex = str(i + 1)
