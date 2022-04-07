@@ -46,10 +46,7 @@ class CommandSet:
         self.cmdList = []
 
         # For some reason, vsim has a "# " before it to pattern match
-        if self.type == "vsim":
-            self.pattern = re.compile(r'^# vsim (-.*)', re.MULTILINE) 
-        else:
-            self.pattern = re.compile(r'^'+self.type+' (-.*)', re.MULTILINE)
+        self.pattern = re.compile(r'^.{0,2}'+self.type+' (-.*)', re.MULTILINE)
 
         if args.verbose: print("INFO: Parsing for "+self.type+"...")
         with open(self.logPath, "r") as f:
