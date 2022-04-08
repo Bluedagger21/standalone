@@ -2,6 +2,7 @@
 A python script to parse Questa regression logs to produce standalone Questa commands
 
 ## usage
+```
 usage: standalone.py [-h] [--testname TESTNAME] [--outdir OUTDIR] [--novlog] [--novopt] [--novsim] [-v] logfile
 
 positional arguments:
@@ -15,6 +16,6 @@ optional arguments:
   --novopt             don't parse vopt commands
   --novsim             don't parse vsim commands
   -v, --verbose        increase output verbosity
-
+```
 ## public use
 Avoid any user identifying implementations. Handling unique scenarios is encouraged, but it must not reveal user identity. Please raise issues for any concerns.
