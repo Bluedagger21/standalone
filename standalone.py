@@ -8,8 +8,23 @@ class Command:
     def __init__(self, type, matched):
         self.type = type
         self.matched = matched
+        self.argFileName = None
+        self.argFilePath = None
+        self.workArgValue = None
+        self.modelsimArg = None
+        self.otherArgs = None
         
-        self.modelsimArg = re.search(r"-modelsimini .*\.ini", self.matched).group(0)
+        try: 
+            self.modelsimArg = re.search(r"-modelsimini .*\.ini", self.matched).group(0)
+        except AttributeError:
+            if args.verbose: print("INFO: -modelsimini option not found for this "+self.type+" command. Continuing...")
+
+        if self.type == "vlog":
+            try: 
+                self.workArgValue = re.search(r"-work (\w+)", self.matched).group(1)
+            except AttributeError:
+                if args.verbose: print("INFO: -work option not found for this "+self.type+" command. Continuing...")
+     
         self.otherArgs = (re.sub(self.modelsimArg, "", self.matched)).split()
 
     # Returns -modelsimini argument
@@ -26,26 +41,32 @@ class Command:
 
     # Write .f file
     def writeArgFile(self, testName, path):
-        self.argFileName = self.type+"_args_"+testName+".f"
+        if self.type == "vlog" and self.workArgValue: 
+            self.argFileName = self.type+"_args_"+self.workArgValue+".f"
+        else:
+            self.argFileName = self.type+"_args_"+testName+".f"
         self.argFilePath = os.path.join(path,self.argFileName)
+        if args.verbose: print("INFO: Writing "+self.argFileName)
         self.argsFH = open(self.argFilePath, "w")
         self.argsFH.write(self.getOtherArgs())
         self.argsFH.close()
 
     # Write single line script with command utilizing .f file
     def writeRunFile(self, testName, path):
-        self.runFileName = "run_"+self.type+"_"+testName
+        if self.type == "vlog" and self.workArgValue: 
+            self.runFileName = "run_"+self.type+"_"+self.workArgValue
+        else:
+            self.runFileName = "run_"+self.type+"_"+testName
         self.runFilePath = os.path.join(path,self.runFileName)
+        if args.verbose: print("INFO: Writing "+self.runFileName)
         self.runFH = open(self.runFilePath, "w")
         self.runFH.write(self.type+" -f "+self.argFileName+" "+ self.modelsimArg)
         self.runFH.close()
 class CommandSet:
-    args = None
     testName = None
     logPath = None
 
-    def __init__(self, args, type):
-        self.args = args
+    def __init__(self, type):
         self.type = type
         self.logPath = os.path.abspath(args.logfile)
         self.cmdList = []
@@ -78,11 +99,8 @@ class CommandSet:
             if self.type == "vlog":
                 self.testNameIndex = str(i + 1)
             # Create the <type>_arg_<testname>.f and write the args to it
-            if self.args.verbose: print("INFO: Writing "+self.type+"_args_"+self.testName+self.testNameIndex+".f")
             cmd.writeArgFile(self.testName+self.testNameIndex, path)
-
             # Create the run_<type>_<testname> executable, including the .f file and -modelsim arg (if applicable)
-            if self.args.verbose: print("INFO: Writing "+self.type+" command to run_"+self.type+"_"+self.testName+self.testNameIndex)
             cmd.writeRunFile(self.testName+self.testNameIndex, path)     
     
 parser = argparse.ArgumentParser()
@@ -92,6 +110,7 @@ parser.add_argument("--outdir", help="relative path directory for generated file
 parser.add_argument("--novlog", help="don't parse vlog commands", action="store_true")
 parser.add_argument("--novopt", help="don't parse vopt commands", action="store_true")
 parser.add_argument("--novsim", help="don't parse vsim commands", action="store_true")
+parser.add_argument("--nolibraryname", help="uses -work <name> to name vlog files", action="store_true")
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 args = parser.parse_args()
 
@@ -116,11 +135,11 @@ if REL_OUT_DIR:
 # List of CommandSet classes to process
 cmdSetList = []
 if not args.novlog:
-    cmdSetList.append(CommandSet(args, "vlog"))
+    cmdSetList.append(CommandSet("vlog"))
 if not args.novopt:
-    cmdSetList.append(CommandSet(args, "vopt"))
+    cmdSetList.append(CommandSet("vopt"))
 if not args.novsim:
-    cmdSetList.append(CommandSet(args, "vsim"))
+    cmdSetList.append(CommandSet("vsim"))
 
 # Write each set of commands out to files
 for set in cmdSetList:
