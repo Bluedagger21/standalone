@@ -118,7 +118,7 @@ parser.add_argument("--outdir", help="relative path directory for generated file
 parser.add_argument("--novlog", help="don't parse vlog commands", action="store_true")
 parser.add_argument("--novopt", help="don't parse vopt commands", action="store_true")
 parser.add_argument("--novsim", help="don't parse vsim commands", action="store_true")
-parser.add_argument("--nolibraryname", help="uses -work <name> to name vlog files", action="store_true")
+parser.add_argument("--nolibraryname", help="forces iteration numbering only for file names", action="store_true")
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 args = parser.parse_args()
 
