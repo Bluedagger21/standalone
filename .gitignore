@@ -6,3 +6,4 @@ run_vlog_*
 run_vopt_*
 run_vsim_*
 vsim_args_*
+run_all*
