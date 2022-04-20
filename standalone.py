@@ -17,13 +17,13 @@ class Command:
         try: 
             self.modelsimArg = re.search(r"-modelsimini .*\.ini", self.matched).group(0)
         except AttributeError:
-            print("INFO: -modelsimini option not found for this "+self.type+" command. Continuing...")
+            if args.verbose: print("INFO: -modelsimini option not found for this "+self.type+" command. Continuing...")
 
         if self.type == "vlog":
             try: 
                 self.workArgValue = re.search(r"-work (\w+)", self.matched).group(1)
             except AttributeError:
-                print("INFO: -work option not found for this "+self.type+" command. Continuing...")
+                if args.verbose: print("INFO: -work option not found for this "+self.type+" command. Continuing...")
      
         self.otherArgs = (re.sub(self.modelsimArg, "", self.matched)).split()
 
@@ -41,7 +41,7 @@ class Command:
 
     # Write .f file
     def writeArgFile(self, testName, path):
-        if args.uselibraryname and self.type == "vlog" and self.workArgValue: 
+        if self.type == "vlog" and self.workArgValue: 
             self.argFileName = self.type+"_args_"+self.workArgValue+".f"
         else:
             self.argFileName = self.type+"_args_"+testName+".f"
@@ -53,7 +53,7 @@ class Command:
 
     # Write single line script with command utilizing .f file
     def writeRunFile(self, testName, path):
-        if args.uselibraryname and self.type == "vlog" and self.workArgValue: 
+        if self.type == "vlog" and self.workArgValue: 
             self.runFileName = "run_"+self.type+"_"+self.workArgValue
         else:
             self.runFileName = "run_"+self.type+"_"+testName
@@ -63,12 +63,10 @@ class Command:
         self.runFH.write(self.type+" -f "+self.argFileName+" "+ self.modelsimArg)
         self.runFH.close()
 class CommandSet:
-    args = None
     testName = None
     logPath = None
 
-    def __init__(self, args, type):
-        self.args = args
+    def __init__(self, type):
         self.type = type
         self.logPath = os.path.abspath(args.logfile)
         self.cmdList = []
@@ -112,7 +110,7 @@ parser.add_argument("--outdir", help="relative path directory for generated file
 parser.add_argument("--novlog", help="don't parse vlog commands", action="store_true")
 parser.add_argument("--novopt", help="don't parse vopt commands", action="store_true")
 parser.add_argument("--novsim", help="don't parse vsim commands", action="store_true")
-parser.add_argument("--uselibraryname", help="uses -work <name> to name vlog files", action="store_true")
+parser.add_argument("--nolibraryname", help="uses -work <name> to name vlog files", action="store_true")
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 args = parser.parse_args()
 
@@ -137,11 +135,11 @@ if REL_OUT_DIR:
 # List of CommandSet classes to process
 cmdSetList = []
 if not args.novlog:
-    cmdSetList.append(CommandSet(args, "vlog"))
+    cmdSetList.append(CommandSet("vlog"))
 if not args.novopt:
-    cmdSetList.append(CommandSet(args, "vopt"))
+    cmdSetList.append(CommandSet("vopt"))
 if not args.novsim:
-    cmdSetList.append(CommandSet(args, "vsim"))
+    cmdSetList.append(CommandSet("vsim"))
 
 # Write each set of commands out to files
 for set in cmdSetList:
