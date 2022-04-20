@@ -14,17 +14,20 @@ class Command:
         self.modelsimArg = None
         self.otherArgs = None
         
+        # Find -modelsimini argument if it exists
         try: 
             self.modelsimArg = re.search(r"-modelsimini .*\.ini", self.matched).group(0)
         except AttributeError:
             if args.verbose: print("INFO: -modelsimini option not found for this "+self.type+" command. Continuing...")
 
+        # Find -work argument if it exists (for vlog only)
         if self.type == "vlog":
             try: 
                 self.workArgValue = re.search(r"-work (\w+)", self.matched).group(1)
             except AttributeError:
                 if args.verbose: print("INFO: -work option not found for this "+self.type+" command. Continuing...")
      
+        # Save all args besides -modelsimini
         self.otherArgs = (re.sub(self.modelsimArg, "", self.matched)).split()
 
     # Returns -modelsimini argument
@@ -39,7 +42,7 @@ class Command:
     def getArgs(self):
         return self.modelsimArg + " ".join(self.otherArgs)
 
-    # Write .f file
+    # Write .f file, returns file path
     def writeArgFile(self, testName, path):
         if self.type == "vlog" and self.workArgValue: 
             self.argFileName = self.type+"_args_"+self.workArgValue+".f"
@@ -52,7 +55,7 @@ class Command:
         self.argsFH.close()
         return self.argFilePath
 
-    # Write single line script with command utilizing .f file
+    # Write single line script with command utilizing .f file, returns file path
     def writeRunFile(self, testName, path):
         if self.type == "vlog" and self.workArgValue: 
             self.runFileName = "run_"+self.type+"_"+self.workArgValue
@@ -106,6 +109,8 @@ class CommandSet:
             # Create the run_<type>_<testname> executable, including the .f file and -modelsim arg (if applicable)
             self.runFileList.append(cmd.writeRunFile(self.testName+self.testNameIndex, path))
         if self.type == "vlog":
+            # Create executable to run all vlog commands
+            if args.verbose: print("INFO: Writing run_all_vlog")
             with open(os.path.join(path,"run_all_vlog"), "w") as f:
                 for self.cmd in self.runFileList:
                     f.write(". " + self.cmd + "\n")
