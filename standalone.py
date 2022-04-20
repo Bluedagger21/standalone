@@ -60,7 +60,7 @@ class Command:
         self.runFilePath = os.path.join(path,self.runFileName)
         if args.verbose: print("INFO: Writing "+self.runFileName)
         self.runFH = open(self.runFilePath, "w")
-        self.runFH.write(self.type+" -f "+self.argFileName+" "+ self.modelsimArg)
+        self.runFH.write(self.type+" -f "+self.argFilePath+" "+ self.modelsimArg)
         self.runFH.close()
 class CommandSet:
     testName = None
