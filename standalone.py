@@ -8,6 +8,11 @@ class Command:
     def __init__(self, type, matched):
         self.type = type
         self.matched = matched
+        self.argFileName = None
+        self.argFilePath = None
+        self.workArgValue = None
+        self.modelsimArg = None
+        self.otherArgs = None
         
         try: 
             self.modelsimArg = re.search(r"-modelsimini .*\.ini", self.matched).group(0)
@@ -36,7 +41,7 @@ class Command:
 
     # Write .f file
     def writeArgFile(self, testName, path):
-        if args.uselibraryname and self.type == "vlog": 
+        if args.uselibraryname and self.type == "vlog" and self.workArgValue: 
             self.argFileName = self.type+"_args_"+self.workArgValue+".f"
         else:
             self.argFileName = self.type+"_args_"+testName+".f"
@@ -48,7 +53,7 @@ class Command:
 
     # Write single line script with command utilizing .f file
     def writeRunFile(self, testName, path):
-        if args.uselibraryname and self.type == "vlog": 
+        if args.uselibraryname and self.type == "vlog" and self.workArgValue: 
             self.runFileName = "run_"+self.type+"_"+self.workArgValue
         else:
             self.runFileName = "run_"+self.type+"_"+testName
