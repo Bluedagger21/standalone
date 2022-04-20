@@ -50,6 +50,7 @@ class Command:
         self.argsFH = open(self.argFilePath, "w")
         self.argsFH.write(self.getOtherArgs())
         self.argsFH.close()
+        return self.argFilePath
 
     # Write single line script with command utilizing .f file
     def writeRunFile(self, testName, path):
@@ -62,6 +63,7 @@ class Command:
         self.runFH = open(self.runFilePath, "w")
         self.runFH.write(self.type+" -f "+self.argFilePath+" "+ self.modelsimArg)
         self.runFH.close()
+        return self.runFilePath
 class CommandSet:
     testName = None
     logPath = None
@@ -94,6 +96,7 @@ class CommandSet:
 
     def writeToOutput(self, path):
         self.testNameIndex = ""
+        self.runFileList = []
         # Iterate through commands in command list
         for i, cmd in enumerate(self.cmdList):
             if self.type == "vlog":
@@ -101,7 +104,12 @@ class CommandSet:
             # Create the <type>_arg_<testname>.f and write the args to it
             cmd.writeArgFile(self.testName+self.testNameIndex, path)
             # Create the run_<type>_<testname> executable, including the .f file and -modelsim arg (if applicable)
-            cmd.writeRunFile(self.testName+self.testNameIndex, path)     
+            self.runFileList.append(cmd.writeRunFile(self.testName+self.testNameIndex, path))
+        if self.type == "vlog":
+            with open(os.path.join(path,"run_all_vlog"), "w") as f:
+                for self.cmd in self.runFileList:
+                    f.write(". " + self.cmd + "\n")
+
     
 parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="log file to parse vopt/vsim commands from")
