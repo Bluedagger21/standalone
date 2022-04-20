@@ -140,7 +140,7 @@ else:
 if REL_OUT_DIR:
     try:
         os.mkdir(ABS_OUT_DIR)
-        if args.verbose: print("Directory "+ABS_OUT_DIR+" created")
+        if args.verbose: print("INFO: Directory "+ABS_OUT_DIR+" created")
     except FileExistsError:
         if input("INFO: Directory "+ABS_OUT_DIR+" already exists. \nOverwrite contents? (y/n): ") == 'n':
             quit()
