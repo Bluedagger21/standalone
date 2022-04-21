@@ -3,7 +3,7 @@ A python script to parse Questa regression logs to produce standalone Questa com
 
 ## usage
 ```
-usage: standalone.py [-h] [--testname TESTNAME] [--outdir OUTDIR] [--novlog] [--novopt] [--novsim] [-v] logfile
+usage: standalone.py [-h] [--testname TESTNAME] [--outdir OUTDIR] [--novlog] [--novopt] [--novsim] [--nolibraryname] [-v] logfile
 
 positional arguments:
   logfile              log file to parse vopt/vsim commands from
@@ -15,6 +15,7 @@ optional arguments:
   --novlog             don't parse vlog commands
   --novopt             don't parse vopt commands
   --novsim             don't parse vsim commands
+  --nolibraryname      forces iteration numbering only for file names
   -v, --verbose        increase output verbosity
 ```
 ## public use

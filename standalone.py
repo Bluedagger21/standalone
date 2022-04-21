@@ -82,15 +82,15 @@ class CommandSet:
         self.logPath = os.path.abspath(args.logfile)
         self.cmdList = []
 
-        # Tool allows 0 to 2 characters after beginning of new line to start parsing for cmd
-        self.pattern = re.compile(r'^.{0,2}'+self.type+' (-.*)', re.MULTILINE)
-
-
+        # Tool allows 0 or more non-whitespace characters after beginning of new line to start parsing for cmd
+        # There may be duplicates, but files created should get overwritten
+        self.pattern = re.compile(r"^\S{0,}("+self.type+" .*)", re.MULTILINE)
+                                    
         if args.verbose: print("INFO: Parsing for "+self.type+"...")
         # Open logfile and return all matches of set pattern
         with open(self.logPath, "r") as f:
             self.matchedList = self.pattern.findall(f.read())
-
+        
         # For each match, append a new Command class
         for self.match in self.matchedList:
             self.cmdList.append(Command(self.type, self.match))
@@ -115,6 +115,8 @@ class CommandSet:
             # Create the run_<type>_<testname> executable, including the .f file and -modelsim arg (if applicable)
             self.runFileList.append(cmd.writeRunFile(self.testName+self.testNameIndex, path))
         if self.type == "vlog":
+            # Remove duplicates
+            self.runFileList = list(dict.fromkeys(self.runFileList))
             # Create executable to run all vlog commands
             if args.verbose: print("INFO: Writing run_all_vlog")
             with open(os.path.join(path,"run_all_vlog"), "w") as f:
