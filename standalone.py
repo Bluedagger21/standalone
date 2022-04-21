@@ -10,22 +10,28 @@ class Command:
         self.matched = matched
         self.argFileName = None
         self.argFilePath = None
-        self.workArgValue = None
+        self.libName = None
         self.modelsimArg = None
         self.otherArgs = None
         
         # Find -modelsimini argument if it exists
-        try: 
-            self.modelsimArg = re.search(r"-modelsimini .*\.ini", self.matched).group(0)
-        except AttributeError:
-            if args.verbose: print("INFO: -modelsimini option not found for this "+self.type+" command. Continuing...")
+        self.modelsimMatch = re.findall(r"-modelsimini .*\.ini", self.matched)
+        if self.modelsimMatch[0]:
+            self.modelsimArg = self.modelsimMatch[0]
+        else:
+            if args.verbose: print("INFO: -modelsimini option not found for this "+self.type+" command. Continuing...")    
 
         # Find -work argument if it exists (for vlog only)
         if self.type == "vlog":
-            try: 
-                self.workArgValue = re.search(r"-work (\w+)", self.matched).group(1)
-            except AttributeError:
-                if args.verbose: print("INFO: -work option not found for this "+self.type+" command. Continuing...")
+            self.vlogMatch = re.findall(r"-work (\w+)", self.matched)
+            if len(self.vlogMatch) > 0:
+                self.libName = self.vlogMatch[0]
+            else:
+                self.vlogMatch = re.findall(r"(\w+).libmap", self.matched)
+                if len(self.vlogMatch) > 0:
+                    self.libName = self.vlogMatch[0]
+                else:
+                    if args.verbose: print("INFO: -libmap nor -work options not found for this "+self.type+" command. Moving on...")
      
         # Save all args besides -modelsimini
         self.otherArgs = (re.sub(self.modelsimArg, "", self.matched)).split()
@@ -44,8 +50,8 @@ class Command:
 
     # Write .f file, returns file path
     def writeArgFile(self, testName, path):
-        if self.type == "vlog" and self.workArgValue: 
-            self.argFileName = self.type+"_args_"+self.workArgValue+".f"
+        if self.type == "vlog" and self.libName: 
+            self.argFileName = self.type+"_args_"+self.libName+".f"
         else:
             self.argFileName = self.type+"_args_"+testName+".f"
         self.argFilePath = os.path.join(path,self.argFileName)
@@ -57,8 +63,8 @@ class Command:
 
     # Write single line script with command utilizing .f file, returns file path
     def writeRunFile(self, testName, path):
-        if self.type == "vlog" and self.workArgValue: 
-            self.runFileName = "run_"+self.type+"_"+self.workArgValue
+        if self.type == "vlog" and self.libName: 
+            self.runFileName = "run_"+self.type+"_"+self.libName
         else:
             self.runFileName = "run_"+self.type+"_"+testName
         self.runFilePath = os.path.join(path,self.runFileName)
@@ -127,7 +133,7 @@ parser.add_argument("--nolibraryname", help="forces iteration numbering only for
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 args = parser.parse_args()
 
-# Initialize constants
+# Initialize global constants
 SCRIPT_DIRECTORY = os.path.dirname(__file__)
 CWD = os.getcwd()
 REL_OUT_DIR = args.outdir
