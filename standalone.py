@@ -121,7 +121,7 @@ class CommandSet:
             if args.verbose: print("INFO: Writing run_all_vlog")
             with open(os.path.join(path,"run_all_vlog"), "w") as f:
                 for self.cmd in self.runFileList:
-                    f.write(". " + self.cmd + "\n")
+                    f.write("source " + self.cmd + "\n")
 
     
 parser = argparse.ArgumentParser()
