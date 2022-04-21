@@ -84,7 +84,7 @@ class CommandSet:
 
         # Tool allows 0 or more non-whitespace characters after beginning of new line to start parsing for cmd
         # There may be duplicates, but files created should get overwritten
-        self.pattern = re.compile(r"^\S{0,}("+self.type+" .*)", re.MULTILINE)
+        self.pattern = re.compile(r"^\S{0,}"+self.type+" (.*)", re.MULTILINE)
                                     
         if args.verbose: print("INFO: Parsing for "+self.type+"...")
         # Open logfile and return all matches of set pattern
