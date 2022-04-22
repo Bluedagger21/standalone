@@ -22,7 +22,7 @@ class Command:
             if args.verbose: print("INFO: -modelsimini option not found for this "+self.type+" command. Continuing...")    
 
         # Find -work argument if it exists (for vlog only)
-        if self.type == "vlog":
+        if self.type == "vlog" or self.type == "vcom":
             self.vlogMatch = re.findall(r"-work (\w+)", self.matched)
             if len(self.vlogMatch) > 0:
                 self.libName = self.vlogMatch[0]
@@ -50,7 +50,7 @@ class Command:
 
     # Write .f file, returns file path
     def writeArgFile(self, testName, path):
-        if self.type == "vlog" and self.libName: 
+        if (self.type == "vlog" or self.type == "vcom") and self.libName: 
             self.argFileName = self.type+"_args_"+self.libName+".f"
         else:
             self.argFileName = self.type+"_args_"+testName+".f"
@@ -63,7 +63,7 @@ class Command:
 
     # Write single line script with command utilizing .f file, returns file path
     def writeRunFile(self, testName, path):
-        if self.type == "vlog" and self.libName: 
+        if (self.type == "vlog" or self.type == "vcom") and self.libName: 
             self.runFileName = "run_"+self.type+"_"+self.libName
         else:
             self.runFileName = "run_"+self.type+"_"+testName
@@ -128,6 +128,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="log file to parse vopt/vsim commands from")
 parser.add_argument("--testname", help="user defined name for the test")
 parser.add_argument("--outdir", help="relative path directory for generated files")
+parser.add_argument("--novcom", help="don't parse vcom commands", action="store_true")
 parser.add_argument("--novlog", help="don't parse vlog commands", action="store_true")
 parser.add_argument("--novopt", help="don't parse vopt commands", action="store_true")
 parser.add_argument("--novsim", help="don't parse vsim commands", action="store_true")
@@ -155,6 +156,8 @@ if REL_OUT_DIR:
 
 # List of CommandSet classes to process
 cmdSetList = []
+if not args.novcom:
+    cmdSetList.append(CommandSet("vcom"))
 if not args.novlog:
     cmdSetList.append(CommandSet("vlog"))
 if not args.novopt:
