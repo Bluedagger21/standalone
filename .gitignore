@@ -1,8 +1,10 @@
 *.log
 vlog_args*.f
+vcom_args*.f
 vopt_args*.f
 .vscode/launch.json
 run_vlog_*
+run_vcom_*
 run_vopt_*
 run_vsim_*
 vsim_args_*
