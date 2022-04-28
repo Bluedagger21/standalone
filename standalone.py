@@ -14,6 +14,8 @@ class Command:
         self.modelsimArg = None
         self.otherArgs = None
         
+
+
         # Find -modelsimini argument if it exists
         self.modelsimMatch = re.findall(r"-modelsimini .*\.ini", self.matched)
         if self.modelsimMatch[0]:
@@ -21,7 +23,7 @@ class Command:
         else:
             if args.verbose: print("INFO: -modelsimini option not found for this "+self.type+" command. Continuing...")    
 
-        # Find -work argument if it exists (for vlog only)
+        # Find -work argument if it exists (for vlog and vcom only)
         if self.type == "vlog" or self.type == "vcom":
             self.vlogMatch = re.findall(r"-work (\w+)", self.matched)
             if len(self.vlogMatch) > 0:
@@ -79,14 +81,24 @@ class CommandSet:
 
     def __init__(self, type):
         self.type = type
+        self.isCompile = (self.type == "vlog") or (self.type == "vcom") or (self.type == "sccom")
         self.logPath = os.path.abspath(args.logfile)
         self.cmdList = []
 
+        if args.verbose: print("INFO: Parsing for "+self.type+"...")
+
+        # Do a -quiet check
+        self.quietPattern = re.compile(r"^.*"+self.type+r" .*-quiet", re.MULTILINE)
+        with open(self.logPath, "r") as f:
+            self.quietMatch = self.quietPattern.findall(f.read())
+        if len(self.quietMatch) > 0:
+            print("ERROR: -quiet detected in "+self.type+" command!\nPlease remove -quiet to properly parse this log. Exiting...")
+            sys.exit()
+
         # Tool allows 0 or more non-whitespace characters after beginning of new line to start parsing for cmd
         # There may be duplicates, but files created should get overwritten
-        self.pattern = re.compile(r"^\S{0,}"+self.type+" (.*)", re.MULTILINE)
+        self.pattern = re.compile(r"^.{0,5}"+self.type+" (.*)", re.MULTILINE)
                                     
-        if args.verbose: print("INFO: Parsing for "+self.type+"...")
         # Open logfile and return all matches of set pattern
         with open(self.logPath, "r") as f:
             self.matchedList = self.pattern.findall(f.read())
@@ -108,18 +120,18 @@ class CommandSet:
         self.runFileList = []
         # Iterate through commands in command list
         for i, cmd in enumerate(self.cmdList):
-            if self.type == "vlog":
+            if self.isCompile:
                 self.testNameIndex = str(i + 1)
             # Create the <type>_arg_<testname>.f and write the args to it
             cmd.writeArgFile(self.testName+self.testNameIndex, path)
             # Create the run_<type>_<testname> executable, including the .f file and -modelsim arg (if applicable)
             self.runFileList.append(cmd.writeRunFile(self.testName+self.testNameIndex, path))
-        if self.type == "vlog":
+        if self.isCompile and len(self.cmdList) > 0:
             # Remove duplicates
             self.runFileList = list(dict.fromkeys(self.runFileList))
             # Create executable to run all vlog commands
-            if args.verbose: print("INFO: Writing run_all_vlog")
-            with open(os.path.join(path,"run_all_vlog"), "w") as f:
+            if args.verbose: print("INFO: Writing run_all_"+self.type)
+            with open(os.path.join(path,"run_all_"+self.type), "w") as f:
                 for self.cmd in self.runFileList:
                     f.write("source " + self.cmd + "\n")
 
@@ -128,6 +140,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="log file to parse vopt/vsim commands from")
 parser.add_argument("--testname", help="user defined name for the test")
 parser.add_argument("--outdir", help="relative path directory for generated files")
+parser.add_argument("--nosccom", help="don't prase vcom commands", action="store_true")
 parser.add_argument("--novcom", help="don't parse vcom commands", action="store_true")
 parser.add_argument("--novlog", help="don't parse vlog commands", action="store_true")
 parser.add_argument("--novopt", help="don't parse vopt commands", action="store_true")
@@ -152,10 +165,12 @@ if REL_OUT_DIR:
         if args.verbose: print("INFO: Directory "+ABS_OUT_DIR+" created")
     except FileExistsError:
         if input("INFO: Directory "+ABS_OUT_DIR+" already exists. \nOverwrite contents? (y/n): ") == 'n':
-            quit()
+            sys.exit()
 
 # List of CommandSet classes to process
 cmdSetList = []
+if not args.nosccom:
+    cmdSetList.append(CommandSet("sccom"))
 if not args.novcom:
     cmdSetList.append(CommandSet("vcom"))
 if not args.novlog:
