@@ -3,6 +3,7 @@ import os
 import sys
 import re
 import argparse
+from xmlrpc.server import list_public_methods
 
 class Command:
     def __init__(self, type, matched):
@@ -84,6 +85,8 @@ class CommandSet:
         self.isCompile = (self.type == "vlog") or (self.type == "vcom") or (self.type == "sccom")
         self.logPath = os.path.abspath(args.logfile)
         self.cmdList = []
+        self.numMatches = 0
+        self.libList = []
 
         if args.verbose: print("INFO: Parsing for "+self.type+"...")
 
@@ -95,18 +98,28 @@ class CommandSet:
             print("ERROR: -quiet detected in "+self.type+" command!\nPlease remove -quiet to properly parse this log. Exiting...")
             sys.exit()
 
-        # Tool allows 0 or more non-whitespace characters after beginning of new line to start parsing for cmd
+        # Tool allows 0 up to 5 non-whitespace characters after beginning of new line to start parsing for cmd
         # There may be duplicates, but files created should get overwritten
         self.pattern = re.compile(r"^.{0,5}"+self.type+" (.*)", re.MULTILINE)
                                     
         # Open logfile and return all matches of set pattern
         with open(self.logPath, "r") as f:
             self.matchedList = self.pattern.findall(f.read())
+            self.numMatches = len(self.matchedList)
+            
         
         # For each match, append a new Command class
         for self.match in self.matchedList:
             self.cmdList.append(Command(self.type, self.match))
             if args.verbose: print("INFO: Match found for "+self.type+"!")
+            if self.cmdList[-1].libName != None:
+                self.libList.append(self.cmdList[-1].libName)
+
+        self.libList = list(dict.fromkeys(self.libList))
+        if args.verbose: print("INFO: Found "+str(self.numMatches)+" "+self.type+" commands")
+        if (self.type == "vlog") or (self.type == "vcom"):
+            if args.verbose: print("INFO: Found "+str(len(self.libList))+" -work <libray>'s for all "+self.type+" commands")
+
         
         # Use user defined testname or derive from logfile name (default)
         if args.testname:
