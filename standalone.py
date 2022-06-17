@@ -34,7 +34,7 @@ class Command:
                 if len(self.vlogMatch) > 0:
                     self.libName = self.vlogMatch[0]
                 else:
-                    if args.verbose: print("INFO: -libmap nor -work options not found for this "+self.type+" command. Moving on...")
+                    if args.verbose: print("INFO: -libmap or -work options not found for this "+self.type+" command. Assuming compiling to default work...")
      
         # Save all args besides -modelsimini
         self.otherArgs = (re.sub(self.modelsimArg, "", self.matched)).split()
@@ -98,7 +98,7 @@ class CommandSet:
             print("ERROR: -quiet detected in "+self.type+" command!\nPlease remove -quiet to properly parse this log. Exiting...")
             sys.exit()
 
-        # Tool allows 0 up to 5 non-whitespace characters after beginning of new line to start parsing for cmd
+        # Tool allows 0 through 5 non-whitespace characters after beginning of new line to start parsing for cmd
         # There may be duplicates, but files created should get overwritten
         self.pattern = re.compile(r"^.{0,5}"+self.type+" (.*)", re.MULTILINE)
                                     
@@ -134,6 +134,7 @@ class CommandSet:
         # Iterate through commands in command list
         for i, cmd in enumerate(self.cmdList):
             if self.isCompile:
+                # Use index to give unique name to sccom/vcom/vlog files if no library was specified
                 self.testNameIndex = str(i + 1)
             # Create the <type>_arg_<testname>.f and write the args to it
             cmd.writeArgFile(self.testName+self.testNameIndex, path)
