@@ -13,9 +13,7 @@ class Command:
         self.argFilePath = None
         self.libName = None
         self.modelsimArg = None
-        self.otherArgs = None
-        
-
+        self.otherArgs = None        
 
         # Find -modelsimini argument if it exists
         self.modelsimMatch = re.findall(r"-modelsimini .*\.ini", self.matched)
@@ -149,7 +147,6 @@ class CommandSet:
                 for self.cmd in self.runFileList:
                     f.write("source " + self.cmd + "\n")
 
-    
 parser = argparse.ArgumentParser()
 parser.add_argument('logfile', help="log file to parse vopt/vsim commands from")
 parser.add_argument("--testname", help="user defined name for the test")
