@@ -8,12 +8,13 @@ from xmlrpc.server import list_public_methods
 class Command:
     def __init__(self, type, matched):
         self.type = type
+        self.isCompile = (self.type == "vlog") or (self.type == "vcom") or (self.type == "sccom")
         self.matched = matched
         self.argFileName = None
         self.argFilePath = None
         self.libName = None
         self.modelsimArg = None
-        self.otherArgs = None        
+        self.otherArgs = None    
 
         # Find -modelsimini argument if it exists
         self.modelsimMatch = re.findall(r"-modelsimini .*\.ini", self.matched)
@@ -22,15 +23,15 @@ class Command:
         else:
             if args.verbose: print("INFO: -modelsimini option not found for this "+self.type+" command. Continuing...")    
 
-        # Find -work argument if it exists (for vlog and vcom only)
-        if self.type == "vlog" or self.type == "vcom":
-            self.vlogMatch = re.findall(r"-work (\w+)", self.matched)
-            if len(self.vlogMatch) > 0:
-                self.libName = self.vlogMatch[0]
+        # Find -work or -libmap argument if it exists (for compile commands only)
+        if self.isCompile:
+            self.foundMatches = re.findall(r"-work (\w+)", self.matched)
+            if len(self.foundMatches) > 0:
+                self.libName = self.foundMatches[0]
             else:
-                self.vlogMatch = re.findall(r"(\w+).libmap", self.matched)
-                if len(self.vlogMatch) > 0:
-                    self.libName = self.vlogMatch[0]
+                self.foundMatches = re.findall(r"(\w+).libmap", self.matched)
+                if len(self.foundMatches) > 0:
+                    self.libName = self.foundMatches[0]
                 else:
                     if args.verbose: print("INFO: -libmap or -work options not found for this "+self.type+" command. Assuming compiling to default work...")
      
@@ -51,7 +52,7 @@ class Command:
 
     # Write .f file, returns file path
     def writeArgFile(self, testName, path):
-        if (self.type == "vlog" or self.type == "vcom") and self.libName: 
+        if self.isCompile and self.libName: 
             self.argFileName = self.type+"_args_"+self.libName+".f"
         else:
             self.argFileName = self.type+"_args_"+testName+".f"
@@ -64,7 +65,7 @@ class Command:
 
     # Write single line script with command utilizing .f file, returns file path
     def writeRunFile(self, testName, path):
-        if (self.type == "vlog" or self.type == "vcom") and self.libName: 
+        if self.isCompile and self.libName:  
             self.runFileName = "run_"+self.type+"_"+self.libName
         else:
             self.runFileName = "run_"+self.type+"_"+testName
@@ -113,18 +114,30 @@ class CommandSet:
             if self.cmdList[-1].libName != None:
                 self.libList.append(self.cmdList[-1].libName)
 
+        # Remove duplicate libraries from list
         self.libList = list(dict.fromkeys(self.libList))
-        if args.verbose: print("INFO: Found "+str(self.numMatches)+" "+self.type+" commands")
-        if (self.type == "vlog") or (self.type == "vcom"):
-            if args.verbose: print("INFO: Found "+str(len(self.libList))+" -work <libray>'s for all "+self.type+" commands")
 
-        
+        # Print some library information
+        if args.verbose:
+            self.libraryCheck()
+
         # Use user defined testname or derive from logfile name (default)
         if args.testname:
             self.testName = args.testname
         else:
             with open(self.logPath, "r") as f:
                 self.testName = re.search(r'^([^.]+)', os.path.basename(f.name), flags=re.MULTILINE).group(1)
+    
+    def libraryCheck(self):
+        self.numCmds = len(self.cmdList)
+        self.numLibs = len(self.libList)
+
+        print("INFO: "+self.type+" command set details...")
+        print("INFO: "+str(self.numCmds)+" unique "+self.type+" commands found")
+        if self.isCompile:
+            print("INFO: "+str(self.numLibs)+" unique libraries within this command set")
+            print("INFO: List of libraries found: ")
+            print(self.libList)
 
     def writeToOutput(self, path):
         self.testNameIndex = ""
