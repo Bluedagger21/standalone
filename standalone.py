@@ -136,7 +136,7 @@ class CommandSet:
         print("INFO: "+str(self.numCmds)+" unique "+self.type+" commands found")
         if self.isCompile:
             print("INFO: "+str(self.numLibs)+" unique libraries within this command set")
-            print("INFO: List of libraries found: ")
+            print("INFO: List of libraries found (-work or -libmap): ")
             print(self.libList)
 
     def writeToOutput(self, path):
@@ -195,15 +195,34 @@ if REL_OUT_DIR:
 cmdSetList = []
 if not args.nosccom:
     cmdSetList.append(CommandSet("sccom"))
+    sccomNum = cmdSetList[-1].numMatches
 if not args.novcom:
     cmdSetList.append(CommandSet("vcom"))
+    vcomNum = cmdSetList[-1].numMatches
 if not args.novlog:
     cmdSetList.append(CommandSet("vlog"))
+    vlogNum = cmdSetList[-1].numMatches
 if not args.novopt:
     cmdSetList.append(CommandSet("vopt"))
+    voptNum = cmdSetList[-1].numMatches
 if not args.novsim:
     cmdSetList.append(CommandSet("vsim"))
+    vsimNum = cmdSetList[-1].numMatches
 
 # Write each set of commands out to files
 for set in cmdSetList:
     set.writeToOutput(ABS_OUT_DIR)
+
+print("INFO: Logfile Used: " + os.path.abspath(args.logfile))
+print("INFO: Total Commands Found: ")
+if not args.nosccom:
+    print("INFO: sccom: \t" + str(sccomNum))
+if not args.novcom:
+    print("INFO: vcom: \t" + str(vcomNum))
+if not args.novlog:
+    print("INFO: vlog: \t" + str(vlogNum))
+if not args.novopt:
+    print("INFO: vopt: \t" + str(voptNum))
+if not args.novsim:
+    print("INFO: vsim: \t" + str(vsimNum))
+print("INFO: Output Directory: " + ABS_OUT_DIR)
